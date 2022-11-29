@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link crossorigin="anonymous" href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>信息安全实验二</title>
+</head>
+
+<body>
+    <div style="display: flex;flex-direction: row; margin-left: 240px; margin-right: 240px;">
+
+        <div class="container" style="display: flex;flex-direction: column;align-items: flex-start;justify-items: start;margin-top: 80px; " >
+            <h1>签名生成</h1>
+            <li>输入Message</li>
+            <input id="input_Message" placeholder="输入消息" style="width:400px ;">
+            <br><button id="sha-512" class="btn btn-primary" onclick="sha512ToHash()">SHA-512</button>
+            <li>HASH值</li>
+            <input id="hash_Result" placeholder="散列结果"style="width:400px ;">
+            <br><button id = "private_Key" type="button" class="btn btn-warning" onclick="getSignature()">私钥签名</button>
+            <li>签名</li>
+            <input id="encrypt" placeholder="加密结果"style="width:400px ;">
+        </div>
+
+        <div class="container" style="display: flex;flex-direction: column;align-items: flex-start;justify-items: start;margin-top: 50px; ">
+            <h1>签名验证</h1>
+            1.验证者已获取到签名、公钥、Messgae
+            <li>Message:</li><input id="Message" style="width:400px ;">
+            <li>签名:</li><input id="sign" style="width:400px ;">
+            <li>公钥:</li><input id="public_key" style="width:400px ;">
+            <button id="get_Data"class="btn btn-success" onclick="setValue()">获取数据</button>
+            <br>2.使用公钥解析签名
+            <button class="btn btn-danger" onclick="decrypt()">公钥解签</button>
+            <li>HASH I:</li><input id="hash_Result1" placeholder="通过公钥解析签名后得到" style="width:400px ;">
+            <br>3.SHA-512散列Message
+            <button id="sha-512-2" class="btn btn-warning" onclick="setSHA512()">SHA-512</button>
+            <li>HASH II:</li><input id="hash_Result2" placeholder="通过SHA-512散列M后得到" style="width:400px ;">
+            <br>4.比较HASH I 与HASH II
+            <input id="cmp_Result" placeholder="将结果进行对比" style="width:400px ;height: 40px;">
+            <button id="cmp" class="btn btn-success btn-lg" onclick="judge()">对比结果</button>
+        </div>
+    </div>
+
+    <script src="./sha512.js" type="text/javascript"></script>
+    <script src="https://passport.cnblogs.com/scripts/jsencrypt.min.js"></script>
+
+    <script>
+        function sha512ToHash(){
+            let m = document.getElementById('input_Message').value;
+            var hashed;
+            if(m.length === 0){
+                hashed = "数据空无法计算";
+            }else{
+                hashed = hex_sha512(m);
+                hashed = hashed.slice(0, 60);
+            }
+            document.getElementById("hash_Result").value = hashed;
+        };
+
+        function getSignature(){
+            var PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC90B6j6w6V6eHXyBNK9CMqTUHNjg1gqbJem8pBOkB15yEvbeMRCzHNwmKKI08Vm2EozMB2w8m9NwCtR2LQMxmhjMsrwOM+hcVzpD6fI6pXY+XPW6IEL6FGdNViG3lWFDe8R4EQ3jZWdOC8ZkeOmyC6+VbWrH3snlmRlbzOvDcHG2JlN553mA58g41q2AFCQlMjy6JfldDuLORJ9M2rJAux3WbAUhsdd4Q+0iGu5fXKqxcYqFnuIyqQM6VPMLh/qN7eXf38l2v+DY5aAnb+ZsAaRnpCcjfjmRGnJAMLXgcjesFJ8xlA1e6LyH6J3tlHGBdewlo3gnocBIBug9+0LO/tAgMBAAECggEADooOjsfGij0sC3dL4wXoW6knTTOAWtMk0pJkX7KylVVq+VMVfYy59+TX33Ts7d7FBncIlxBQN6oq5xr8uq3vXKyIM4XG4lck1MLT+SSmO6NvSv7d3iw30knIvocUOD+8NTPU8xHSX7T8MfIzsPy4+Rl4SWFVE/bdLYWmvL82B9kzQ+oQa5x2lwg/vlM/FVM+1GyuR/f15UCd2Us/+yPnRc3ukQUFRnhlDqImssx926C5W1w2RnBhTQuce4leq/wu3wBCAxBnMbYdBJkaMqkHfRQUMc5ewvp/J6IulGXUp0yfEVHZ2JnqZ5G0oysIE+OE7yglu+AayZdz7g13tJ/8EQKBgQDumoHdegdsRT20ZiJwOS10njacMf1T0KQeKvAXzsofcKjBZ0hfvCC97wg1+ZmOgf9nscxIqyuepIFVRTuxWH8NFX1Zd7LhZTOQiephBscTkvLIxp0oBQ+LRxhUupTCNBj5Nw9lcD5Rt6GKoEfyafMSDFv9Jq2HE9BjeY7pooaaXwKBgQDLpvHpf3UwArRD+o/B9mZ0d4g9OH8ZgmDWwBwagcnJfYYEQP0sAWGcIvPfn+visCmydQ765GMPNrdVlwUHsiKIzMwxTX1qDkeYf53Bu+VTsCVS8WZ5QqEUCRSLGUgYAD9kOgHvQMut4z3J2OEwwtnppcYwzM+2xS67YC5lIjAxMwKBgC6QrMOCayxwHuiz/giUwBBASDwXbW8MCttwWcbrrnqQS/7inzc/ycwHeDzAZ31uVV/xTQLplOuzAyKXDl0//huZlAr/10MxsuyEXd9tqTBiv0r7p/QFeNEfoNn4R8vWywDoA/MyApeEFNyvBxuCHdPp4ZH4GGmCLmsbcA6cj1RVAoGBAKrZmte+Y0zs59ij61jY42lQIo7hx9dZxu5C6xDd07DjSrxk3UC+w+nedOQl4Rojmkep5vBbDDPmPnZipQiozEoiLigqj02bPztTzMCMZr8H5rgn50VRvZr2ZzKu+gmQo53tAFR88qMmIl8lQP7MaU6YEaY9HQGDeUofTazwuqd7AoGBAIvAY8BnyI1OSjB2dv1lpNDqXkfbEJTCWn0fDku0p/Z19aRriLWn4oBDZL52V6fp8v3mFvxe6TzI1pl+SiBMuCkbycc1AgNoGMEJ94C1R03nc+AmqVc1ZQ5nrZDnBxnEJ1lTiEf2uoXrdiJsSDj/P2emVvz/RyGwWRoX2yaSL81G-----END PRIVATE KEY-----";
+            let hashed = document.getElementById('hash_Result').value;
+            var encrypt = new JSEncrypt();
+            encrypt.setPrivateKey(PRIVATE_KEY);
+            var encrypted;
+            if(hashed.length === 0){
+                encrypt="数据空无法签名";
+            }else{
+                encrypted = encrypt.encrypt(hashed);
+            }
+            document.getElementById('encrypt').value = encrypted;
+        }
+
+        function setValue(){
+            document.getElementById('Message').value = document.getElementById('input_Message').value;
+            document.getElementById('sign').value = document.getElementById('encrypt').value;
+            PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvdAeo+sOlenh18gTSvQjKk1BzY4NYKmyXpvKQTpAdechL23jEQsxzcJiiiNPFZthKMzAdsPJvTcArUdi0DMZoYzLK8DjPoXFc6Q+nyOqV2Plz1uiBC+hRnTVYht5VhQ3vEeBEN42VnTgvGZHjpsguvlW1qx97J5ZkZW8zrw3BxtiZTeed5gOfIONatgBQkJTI8uiX5XQ7izkSfTNqyQLsd1mwFIbHXeEPtIhruX1yqsXGKhZ7iMqkDOlTzC4f6je3l39/Jdr/g2OWgJ2/mbAGkZ6QnI345kRpyQDC14HI3rBSfMZQNXui8h+id7ZRxgXXsJaN4J6HASAboPftCzv7QIDAQAB";
+            document.getElementById('public_key').value = PUBLIC_KEY;
+        }
+
+        function decrypt(){
+            var PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC90B6j6w6V6eHXyBNK9CMqTUHNjg1gqbJem8pBOkB15yEvbeMRCzHNwmKKI08Vm2EozMB2w8m9NwCtR2LQMxmhjMsrwOM+hcVzpD6fI6pXY+XPW6IEL6FGdNViG3lWFDe8R4EQ3jZWdOC8ZkeOmyC6+VbWrH3snlmRlbzOvDcHG2JlN553mA58g41q2AFCQlMjy6JfldDuLORJ9M2rJAux3WbAUhsdd4Q+0iGu5fXKqxcYqFnuIyqQM6VPMLh/qN7eXf38l2v+DY5aAnb+ZsAaRnpCcjfjmRGnJAMLXgcjesFJ8xlA1e6LyH6J3tlHGBdewlo3gnocBIBug9+0LO/tAgMBAAECggEADooOjsfGij0sC3dL4wXoW6knTTOAWtMk0pJkX7KylVVq+VMVfYy59+TX33Ts7d7FBncIlxBQN6oq5xr8uq3vXKyIM4XG4lck1MLT+SSmO6NvSv7d3iw30knIvocUOD+8NTPU8xHSX7T8MfIzsPy4+Rl4SWFVE/bdLYWmvL82B9kzQ+oQa5x2lwg/vlM/FVM+1GyuR/f15UCd2Us/+yPnRc3ukQUFRnhlDqImssx926C5W1w2RnBhTQuce4leq/wu3wBCAxBnMbYdBJkaMqkHfRQUMc5ewvp/J6IulGXUp0yfEVHZ2JnqZ5G0oysIE+OE7yglu+AayZdz7g13tJ/8EQKBgQDumoHdegdsRT20ZiJwOS10njacMf1T0KQeKvAXzsofcKjBZ0hfvCC97wg1+ZmOgf9nscxIqyuepIFVRTuxWH8NFX1Zd7LhZTOQiephBscTkvLIxp0oBQ+LRxhUupTCNBj5Nw9lcD5Rt6GKoEfyafMSDFv9Jq2HE9BjeY7pooaaXwKBgQDLpvHpf3UwArRD+o/B9mZ0d4g9OH8ZgmDWwBwagcnJfYYEQP0sAWGcIvPfn+visCmydQ765GMPNrdVlwUHsiKIzMwxTX1qDkeYf53Bu+VTsCVS8WZ5QqEUCRSLGUgYAD9kOgHvQMut4z3J2OEwwtnppcYwzM+2xS67YC5lIjAxMwKBgC6QrMOCayxwHuiz/giUwBBASDwXbW8MCttwWcbrrnqQS/7inzc/ycwHeDzAZ31uVV/xTQLplOuzAyKXDl0//huZlAr/10MxsuyEXd9tqTBiv0r7p/QFeNEfoNn4R8vWywDoA/MyApeEFNyvBxuCHdPp4ZH4GGmCLmsbcA6cj1RVAoGBAKrZmte+Y0zs59ij61jY42lQIo7hx9dZxu5C6xDd07DjSrxk3UC+w+nedOQl4Rojmkep5vBbDDPmPnZipQiozEoiLigqj02bPztTzMCMZr8H5rgn50VRvZr2ZzKu+gmQo53tAFR88qMmIl8lQP7MaU6YEaY9HQGDeUofTazwuqd7AoGBAIvAY8BnyI1OSjB2dv1lpNDqXkfbEJTCWn0fDku0p/Z19aRriLWn4oBDZL52V6fp8v3mFvxe6TzI1pl+SiBMuCkbycc1AgNoGMEJ94C1R03nc+AmqVc1ZQ5nrZDnBxnEJ1lTiEf2uoXrdiJsSDj/P2emVvz/RyGwWRoX2yaSL81G-----END PRIVATE KEY-----";
+            var PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvdAeo+sOlenh18gTSvQjKk1BzY4NYKmyXpvKQTpAdechL23jEQsxzcJiiiNPFZthKMzAdsPJvTcArUdi0DMZoYzLK8DjPoXFc6Q+nyOqV2Plz1uiBC+hRnTVYht5VhQ3vEeBEN42VnTgvGZHjpsguvlW1qx97J5ZkZW8zrw3BxtiZTeed5gOfIONatgBQkJTI8uiX5XQ7izkSfTNqyQLsd1mwFIbHXeEPtIhruX1yqsXGKhZ7iMqkDOlTzC4f6je3l39/Jdr/g2OWgJ2/mbAGkZ6QnI345kRpyQDC14HI3rBSfMZQNXui8h+id7ZRxgXXsJaN4J6HASAboPftCzv7QIDAQAB-----END PUBLIC KEY-----";
+            let sign = document.getElementById('sign').value;
+            var decrypt = new JSEncrypt();
+            decrypt.setPublicKey(PUBLIC_KEY);
+            decrypt.setPrivateKey(PRIVATE_KEY);
+            var undecrypt = decrypt.decrypt(sign);
+            console.log('undecrypt :>> ', undecrypt);
+            if(undecrypt === false){
+                undecrypt = "解密失败";
+            }else if(undecrypt === null){
+                undecrypt = "解密失败"
+            }
+            document.getElementById('hash_Result1').value = undecrypt;
+        }
+
+        function setSHA512(){
+            let m = document.getElementById('Message').value;
+            var hashed;
+            if(m.length === 0){
+                hashed = "数据空无法计算";
+            }else{
+                hashed = hex_sha512(m);
+                hashed = hashed.slice(0, 60);
+            }
+            document.getElementById("hash_Result2").value = hashed;
+        }
+
+        function judge(){
+            var I = document.getElementById('hash_Result1').value;
+            var II = document.getElementById('hash_Result2').value;
+            if(I === II){
+                document.getElementById('cmp_Result').value = "解密成功√";
+            }else{
+                document.getElementById('cmp_Result').value = "解密失败X";
+            }
+        }
+
+    </script>
+</body>
+</html>
